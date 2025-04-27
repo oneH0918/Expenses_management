@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログイン - Expenses Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            width: 320px;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .input-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .toggle-password {
+            background: #ddd;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #007bff;
+            padding: 8px;
+            margin-left: 5px;
+        }
+        .toggle-password:hover {
+            background-color: #bbb;
+            text-decoration: underline;
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+        }
+        .btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .btn-login {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            margin-right: 5px;
+        }
+        .btn-login:hover {
+            background-color: #218838;
+        }
+        .btn-register {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            margin-left: 5px;
+        }
+        .btn-register:hover {
+            background-color: #0056b3;
+        }
+        .error-message {
+            color: red;
+            text-align: center;
+            margin-bottom: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h2>ログイン</h2>
+        <p id="error-message" class="error-message">メールアドレスまたはパスワードが間違っています。</p>
+        <form id="login-form">
+            <label for="email">メールアドレス</label>
+            <input type="email" id="email" name="email" required>
+            
+            <label for="password">パスワード</label>
+            <div class="input-container">
+                <input type="password" id="password" name="password" required>
+                <button type="button" class="toggle-password" onclick="togglePassword()">表示</button>
+            </div>
+            
+            <div class="button-container">
+                <button type="submit" class="btn btn-login">ログイン</button>
+                <button type="button" class="btn btn-register" onclick="location.href='/register'">登録</button>
+            </div>
+
+            <p style="text-align:center; margin-top: 10px;">
+                <a href="/reset_password">パスワードをお忘れですか？</a>
+            </p>
+        </form>
+    </div>
+
+    <script>
+        function togglePassword() {
+            var passwordField = document.getElementById("password");
+            var toggleButton = document.querySelector(".toggle-password");
+
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+                toggleButton.textContent = "非表示";
+            } else {
+                passwordField.type = "password";
+                toggleButton.textContent = "表示";
+            }
+        }
+
+        document.getElementById("login-form").addEventListener("submit", function(event) {
+            event.preventDefault(); // フォームの通常の送信を防止
+
+            var email = document.getElementById("email").value;
+            var password = document.getElementById("password").value;
+            var errorMessage = document.getElementById("error-message");
+
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
+            })
+            .then(async response => {
+            // --- JSON でない場合の保険 ---
+            const ct = response.headers.get('content-type') || '';
+            if (!ct.includes('application/json')) {
+                throw new Error('invalid-response');
+            }
+            return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    window.location.href = "/dashboard"; // 成功時にリダイレクト
+                } else {
+                    errorMessage.textContent = data.error;
+                    errorMessage.style.display = "block"; // エラーメッセージを表示
+                }
+            })
+            .catch(error => {
+                console.error('ログインエラー:', error);
+                errorMessage.textContent = "サーバーエラーが発生しました。";
+                errorMessage.style.display = "block";
+            });
+        });
+    </script>
+
+</body>
+</html>

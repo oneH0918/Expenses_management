@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>レポート - Expenses Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .summary {
+            font-size: 18px;
+            line-height: 2;
+        }
+        .summary span {
+            font-weight: bold;
+        }
+        .text-green {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .text-red {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .back {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .back a {
+            text-decoration: none;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>レポート</h2>
+        <div class="summary">
+            <p><span>合計入金:</span> <span class="text-green">¥ {{ total_income_fmt }}</span></p>
+            <p><span>合計出金:</span> <span class="text-red">¥ {{ total_expense_fmt }}</span></p>
+            <p><span>差額:</span> <span class="{{ 'text-green' if balance >= 0 else 'text-red' }}">¥ {{ balance_fmt }}</span></p>
+        </div>
+        <div class="back">
+            <a href="/dashboard">← ダッシュボードへ戻る</a>
+        </div>
+    </div>
+</body>
+</html>

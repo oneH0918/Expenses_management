@@ -1,0 +1,4 @@
+.env
+/仕様書
+/__pycache__
+database.db

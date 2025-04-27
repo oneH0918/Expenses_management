@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>メイン画面 - Expenses Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            padding: 20px;
+        }
+        h2 {
+            text-align: center;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 10px;
+            position: relative;
+        }
+        .btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-income { background-color: #28a745; color: white; }
+        .btn-expense { background-color: #dc3545; color: white; }
+        .btn-report { background-color: #17a2b8; color: white; }
+        .btn-settings { background-color: #6c757d; color: white; }
+        .btn-menu { background-color: #343a40; color: white; position: relative; }
+
+        .dropdown {
+            position: absolute;
+            top: 45px;
+            right: 0;
+            left: auto;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0px 0px 5px rgba(0,0,0,0.1);
+            display: none;
+            min-width: 140px;
+            z-index: 1000;
+        }
+
+        .dropdown a {
+            display: block;
+            padding: 10px;
+            text-decoration: none;
+            color: black;
+        }
+
+        .dropdown a:hover {
+            background-color: #f0f0f0;
+        }
+
+        .treeview {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        colgroup col {
+            width: 20%;
+        }
+
+        th, td {
+            border-right: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+            overflow-wrap: break-word;
+        }
+
+        th:last-child, td:last-child {
+            border-right: none;
+        }
+
+        th {
+            background-color: #f8f8f8;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .edit-btn {
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>ようこそ！</h2>
+
+    <div class="button-container">
+        <button class="btn btn-income" onclick="location.href='/transaction?type=income'">入金</button>
+        <button class="btn btn-expense" onclick="location.href='/transaction?type=expense'">出金</button>
+        <button class="btn btn-report" onclick="location.href='/report'">レポート</button>
+        <button class="btn btn-settings" onclick="location.href='/settings'">設定</button>
+
+        <div style="position: relative;">
+            <button class="btn btn-menu" id="menu-toggle" aria-label="その他メニュー">︙</button>
+            <div id="dropdown-menu" class="dropdown">
+                <a href="/logout">ログアウト</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="treeview">
+        <!-- ▼ フィルターボタンをタイトル横に配置 -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="margin: 0;">取引履歴</h3>
+            <button id="toggle-filter" class="btn" style="background-color:#007bff; color:white;">フィルター</button>
+        </div>
+
+        <!-- ▼ フィルターフォーム -->
+        <div id="filter-form" style="display:none; margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.1);">
+            <label>操作の種類:
+                <select id="filter-type">
+                    <option value="">すべて</option>
+                    <option value="income">入金</option>
+                    <option value="expense">出金</option>
+                </select>
+            </label>
+            <label>金額範囲:
+                <input type="number" id="filter-min-amount" placeholder="最小金額" style="width: 100px;">
+                ～ <input type="number" id="filter-max-amount" placeholder="最大金額" style="width: 100px;">
+            </label>
+            <label>備考:
+                <input type="text" id="filter-note" placeholder="キーワード" style="width: 200px;">
+            </label>
+            <button onclick="applyFilter()" class="btn btn-settings" style="margin-left: 10px;">適用</button>
+        </div>
+
+        <table>
+            <colgroup>
+                <col>
+                <col>
+                <col>
+                <col>
+                <col>
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>日付</th>
+                    <th>操作の種類</th>
+                    <th>金額</th>
+                    <th>備考</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr data-id="{{ t.id }}">
+                    <td>{{ t.date.replace("T", " ")[:16] }}</td>
+                    <td>{{ '入金' if t.type == 'income' else '出金' }}</td>
+                    <td>¥{{ '{:,}'.format(t.amount) }}</td>
+                    <td>{{ t.note }}</td>
+                    <td>
+                        <button class="edit-btn" onclick="location.href='/edit_transaction/{{ t.id }}'">編集</button>
+                        <button class="delete-btn" data-id="{{ t.id }}">削除</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const toggleBtn = document.getElementById("menu-toggle");
+        const dropdown = document.getElementById("dropdown-menu");
+
+        toggleBtn.addEventListener("click", () => {
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        });
+
+        document.addEventListener("click", (event) => {
+            if (!toggleBtn.contains(event.target) && !dropdown.contains(event.target)) {
+                dropdown.style.display = "none";
+            }
+        });
+
+        document.querySelectorAll(".delete-btn").forEach(btn => {
+            btn.addEventListener("click", function () {
+                if (!confirm("この取引を削除しますか？")) return;
+                const id = this.getAttribute("data-id");
+
+                fetch(`/delete_transaction/${id}`, {
+                    method: "POST"
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert("削除に失敗しました: " + data.error);
+                    }
+                })
+                .catch(err => {
+                    alert("サーバーエラーが発生しました");
+                    console.error(err);
+                });
+            });
+        });
+
+        // ▼ フィルターの表示切替
+        document.getElementById("toggle-filter").addEventListener("click", () => {
+            const form = document.getElementById("filter-form");
+            form.style.display = form.style.display === "none" ? "block" : "none";
+        });
+
+        // ▼ フィルターの適用処理（修正済み）
+        function applyFilter() {
+            const type = document.getElementById("filter-type").value;
+            const minInput = document.getElementById("filter-min-amount").value;
+            const maxInput = document.getElementById("filter-max-amount").value;
+            const noteKeyword = document.getElementById("filter-note").value.trim().toLowerCase();
+
+            const minAmount = minInput ? parseInt(minInput) : null;
+            const maxAmount = maxInput ? parseInt(maxInput) : null;
+
+            document.querySelectorAll("tbody tr").forEach(row => {
+                const typeText = row.cells[1].innerText.trim();
+                const amountText = row.cells[2].innerText.replace(/[\u00A5,]/g, '');
+                const noteText = row.cells[3].innerText.toLowerCase();
+
+                const typeValue = (typeText === '入金') ? 'income' : 'expense';
+                const amountValue = parseInt(amountText);
+
+                const matchType = !type || type === typeValue;
+                const matchMin = minAmount === null || amountValue >= minAmount;
+                const matchMax = maxAmount === null || amountValue <= maxAmount;
+                const matchNote = !noteKeyword || noteText.includes(noteKeyword);
+
+                row.style.display = (matchType && matchMin && matchMax && matchNote) ? "" : "none";
+            });
+        }
+    </script>
+
+</body>
+</html>

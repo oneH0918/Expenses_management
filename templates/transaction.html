@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>収支記録</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f2f2f2;
+        }
+        form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            margin: auto;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .btn-submit {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-cancel {
+            background-color: #6c757d;
+            color: white;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!--
+        変更点: 
+        - 編集モードで呼び出された場合、transaction_data が存在し、
+          それを各入力に初期表示するようにした。
+        - 新規登録と編集で actionURL を切り替えるロジックを実装。
+        - hidden で transaction_id を持たせる（編集時のみ）。
+    -->
+
+    {% if transaction_data %}
+        <form id="transaction-form">
+            <h2>取引編集</h2>
+            <input type="hidden" name="transaction_id" value="{{ transaction_data.id }}">
+
+            <label for="type">操作の種類</label>
+            <select id="type" name="type">
+                <option value="income" {% if transaction_data.type == 'income' %}selected{% endif %}>入金</option>
+                <option value="expense" {% if transaction_data.type == 'expense' %}selected{% endif %}>出金</option>
+            </select>
+
+            <label for="amount">金額</label>
+            <input
+                type="number"
+                id="amount"
+                name="amount"
+                value="{{ transaction_data.amount }}"
+                required
+            >
+
+            <label for="date">取引日時</label>
+            <!-- date に含まれる "YYYY-MM-DDTHH:MM:SS" から "YYYY-MM-DDTHH:MM" 形式を作成 -->
+            {% set date_str = transaction_data.date.replace(" ", "T")[:16] %}
+            <input
+                type="datetime-local"
+                id="date"
+                name="date"
+                value="{{ date_str }}"
+                required
+            >
+
+            <label for="note">備考</label>
+            <textarea id="note" name="note" rows="3">{{ transaction_data.note }}</textarea>
+
+            <button type="submit" class="btn-submit">更新</button>
+            <button type="button" class="btn-cancel" onclick="location.href='/dashboard'">キャンセル</button>
+        </form>
+    {% else %}
+        <form id="transaction-form">
+            <h2>収支記録</h2>
+
+            <label for="type">操作の種類</label>
+            <select id="type" name="type">
+                <option value="income" {% if transaction_type == 'income' %}selected{% endif %}>入金</option>
+                <option value="expense" {% if transaction_type == 'expense' %}selected{% endif %}>出金</option>
+            </select>
+
+            <label for="amount">金額</label>
+            <input type="number" id="amount" name="amount" required>
+
+            <label for="date">取引日時</label>
+            <input type="datetime-local" id="date" name="date" required>
+
+            <label for="note">備考</label>
+            <textarea id="note" name="note" rows="3"></textarea>
+
+            <button type="submit" class="btn-submit">確定</button>
+            <button type="button" class="btn-cancel" onclick="location.href='/dashboard'">取り消し</button>
+        </form>
+    {% endif %}
+
+    <script>
+    document.getElementById("transaction-form").addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        const formData = new FormData(this);
+        // 編集モードかどうかでURL切り替え
+        let url = "/transaction";
+        if (formData.get('transaction_id')) {
+            url = "/update_transaction";
+        }
+
+        fetch(url, {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect;
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("サーバーエラーが発生しました。");
+        });
+    });
+    </script>
+
+</body>
+</html>

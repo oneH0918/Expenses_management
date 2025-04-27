@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>設定 - Expenses Management</title>
+    <style>
+        body{font-family:Arial, sans-serif;background:#f2f2f2;padding:20px;}
+        .container{max-width:600px;margin:auto;background:#fff;padding:25px;border-radius:8px;box-shadow:0 0 10px rgba(0,0,0,.1);}
+        h2{text-align:center;margin-bottom:20px;}
+        fieldset{margin-bottom:25px;border:1px solid #ccc;border-radius:6px;padding:15px;}
+        legend{font-weight:bold;}
+        label{display:block;margin-top:10px;}
+        input{width:100%;padding:8px;margin-top:5px;border-radius:4px;border:1px solid #ccc;}
+        button{margin-top:15px;padding:10px;width:100%;border:none;border-radius:4px;background:#007bff;color:#fff;cursor:pointer;}
+        button:hover{opacity:.9;}
+        .msg{margin-top:10px;color:red;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>アカウント設定</h2>
+
+    <!-- メールアドレス変更 -->
+    <fieldset>
+        <legend>メールアドレスの変更</legend>
+        <form id="form-email">
+            <label>現在のメールアドレス
+                <input type="email" name="current_email" required>
+            </label>
+            <label>パスワード
+                <input type="password" name="password" required>
+            </label>
+            <label>新しいメールアドレス
+                <input type="email" name="new_email" required>
+            </label>
+            <button type="submit">変更</button>
+            <p class="msg" id="msg-email"></p>
+        </form>
+    </fieldset>
+
+    <!-- パスワード変更 -->
+    <fieldset>
+        <legend>パスワードの変更</legend>
+        <form id="form-password">
+            <label>現在のパスワード
+                <input type="password" name="current_password" required>
+            </label>
+            <label>新しいパスワード
+                <input type="password" name="new_password" required>
+            </label>
+            <label>確認用パスワード
+                <input type="password" name="confirm_password" required>
+            </label>
+            <button type="submit">変更</button>
+            <p class="msg" id="msg-password"></p>
+        </form>
+    </fieldset>
+
+    <!-- パスワードリセットリンク送信 -->
+    <fieldset>
+        <legend>パスワードリセット</legend>
+        <form id="form-reset">
+            <p>現在のメールアドレスにリセットリンクを送信します。</p>
+            <button type="submit">送信</button>
+            <p class="msg" id="msg-reset"></p>
+        </form>
+    </fieldset>
+
+    <div style="text-align:center;">
+        <a href="/dashboard">← ダッシュボードへ戻る</a>
+    </div>
+</div>
+
+<script>
+function ajax(formId, url, msgId){
+    const form=document.getElementById(formId);
+    form.addEventListener("submit",e=>{
+        e.preventDefault();
+        const formData=new FormData(form);
+        fetch(url,{method:"POST",body:formData})
+            .then(r=>r.json()).then(d=>{
+                const msg=document.getElementById(msgId);
+                if(d.success){
+                    msg.style.color="green"; msg.textContent=d.message;
+                }else{
+                    msg.style.color="red"; msg.textContent=d.error;
+                }
+            }).catch(()=>{document.getElementById(msgId).textContent="サーバーエラーが発生しました";});
+    });
+}
+ajax("form-email","/settings/change_email","msg-email");
+ajax("form-password","/settings/change_password","msg-password");
+ajax("form-reset","/settings/reset_password_link","msg-reset");
+</script>
+</body>
+</html>
